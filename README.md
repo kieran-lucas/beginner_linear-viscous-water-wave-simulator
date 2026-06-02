@@ -59,6 +59,12 @@ Compare Mode adds an amber dashed B timeline. Historical samples are capped to
 avoid memory growth during long sessions, and the graphs downsample only while
 drawing. Advanced numerics also reveals an approximate rendered-frame rate.
 
+The desktop shell uses a centralized light scientific design system with calm
+ocean-blue actions, keyboard-visible focus states, concise tooltips, and no
+decorative gradients or heavy effects. See
+[`docs/design-system.md`](docs/design-system.md) for tokens, typography,
+spacing, interaction states, and keyboard shortcuts.
+
 ## Run the tests
 
 The validation suite uses Python's standard library. PySide6 rendering tests run

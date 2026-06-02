@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from .simulation import BoundaryCondition, InitialCondition, SimulationParameters, check_stability
+from .design_system import set_accessible_tooltip, set_button_role
 
 
 @dataclass(frozen=True)
@@ -160,6 +161,10 @@ class ControlPanel(QWidget):
         self.play_button = QPushButton("Play")
         self.reset_button = QPushButton("Reset")
         self.step_button = QPushButton("Step")
+        set_button_role(self.play_button, "primary")
+        set_button_role(self.reset_button, "secondary")
+        set_button_role(self.step_button, "ghost")
+        self._set_tooltips()
         self._build_layout()
         self._connect_signals()
         self.load_preset(PRESETS[0])
@@ -225,6 +230,27 @@ class ControlPanel(QWidget):
         layout.addWidget(self.advanced_frame)
         layout.addStretch(1)
         self.advanced_frame.setVisible(False)
+
+    def _set_tooltips(self) -> None:
+        tooltips = (
+            (self.preset_combo, "Load a guided experiment with beginner-safe values."),
+            (self.shape_combo, "Choose a repeating wave or one localized pulse."),
+            (self.amplitude_spin, "Set the starting wave height measured from equilibrium."),
+            (self.wavelength_spin, "Set the distance between repeating wave peaks."),
+            (self.pulse_width_spin, "Set how broadly the starting pulse spreads across space."),
+            (self.wave_speed_spin, "Set how quickly peaks move across the domain."),
+            (self.damping_spin, "Set how quickly simplified viscous loss removes wave energy."),
+            (self.playback_combo, "Change animation pace without changing the physics."),
+            (self.advanced_toggle, "Show numerical controls and stability details."),
+            (self.grid_points_spin, "Set spatial resolution. More points require more work."),
+            (self.time_step_spin, "Set simulated seconds per numerical update."),
+            (self.boundary_combo, "Choose what happens when a wave reaches a domain edge."),
+            (self.play_button, "Start or pause animation. Keyboard shortcut: Space."),
+            (self.reset_button, "Restart the experiment at t = 0. Keyboard shortcut: Ctrl+R."),
+            (self.step_button, "Advance one numerical step. Keyboard shortcut: Right arrow."),
+        )
+        for widget, text in tooltips:
+            set_accessible_tooltip(widget, text)
 
     def _preset_layout(self) -> QVBoxLayout:
         layout = QVBoxLayout()

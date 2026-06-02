@@ -8,7 +8,6 @@ from typing import Callable, Sequence
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import (
-    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -19,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from .education import stability_message
+from .design_system import color, set_accessible_tooltip, set_button_role
 from .simulation import DiagnosticSample, StabilityReport
 
 
@@ -32,11 +32,11 @@ class GraphSeries:
 class TrendCanvas(QWidget):
     """Small dependency-free graph for one timeline metric."""
 
-    BACKGROUND = QColor("#FFFFFF")
-    TEXT = QColor("#5B667A")
-    GRID = QColor("#DCE2EA")
-    A_COLOR = QColor("#1769AA")
-    B_COLOR = QColor("#C77C18")
+    BACKGROUND = color("canvas_background")
+    TEXT = color("text_secondary")
+    GRID = color("border")
+    A_COLOR = color("primary")
+    B_COLOR = color("comparison")
 
     def __init__(
         self,
@@ -127,7 +127,10 @@ class TrendCanvas(QWidget):
             self._history_b[-1].time if self._history_b else 0.0,
         )
         painter.drawText(QPointF(plot.left(), bounds.bottom() - 5.0), "0 s")
-        painter.drawText(QPointF(plot.right() - 42.0, bounds.bottom() - 5.0), f"{time_maximum:.2f} s")
+        painter.drawText(
+            QPointF(plot.right() - 42.0, bounds.bottom() - 5.0),
+            f"{time_maximum:.2f} s",
+        )
 
     @staticmethod
     def _downsample(
@@ -150,6 +153,11 @@ class DiagnosticsPanel(QWidget):
         super().__init__(parent)
         self.setObjectName("diagnosticsPanel")
         self.toggle_button = QPushButton("Hide diagnostics")
+        set_button_role(self.toggle_button, "ghost")
+        set_accessible_tooltip(
+            self.toggle_button,
+            "Collapse or restore timeline graphs. Keyboard shortcut: Ctrl+G.",
+        )
         self.summary_label = QLabel()
         self.summary_label.setObjectName("diagnosticsSummary")
         self.summary_label.setWordWrap(True)
@@ -241,4 +249,3 @@ class DiagnosticsPanel(QWidget):
         visible = self.graph_frame.isHidden()
         self.graph_frame.setVisible(visible)
         self.toggle_button.setText("Hide diagnostics" if visible else "Show diagnostics")
-

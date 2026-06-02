@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from .control_panel import LabSettings
+from .design_system import set_accessible_tooltip, set_button_role
 from .simulation import DiagnosticSample, StabilityReport
 
 
@@ -59,6 +60,23 @@ class ComparePanel(QWidget):
         self.warning_label = QLabel()
         self.warning_label.setObjectName("compareWarning")
         self.warning_label.setWordWrap(True)
+        set_button_role(self.duplicate_button, "secondary")
+        set_accessible_tooltip(
+            self.enabled_toggle,
+            "Overlay a synchronized B experiment for a direct physical comparison.",
+        )
+        set_accessible_tooltip(
+            self.duplicate_button,
+            "Copy all A settings into B. Keyboard shortcut: Ctrl+D.",
+        )
+        set_accessible_tooltip(
+            self.parameter_combo,
+            "Choose the one B parameter to change while A remains fixed.",
+        )
+        set_accessible_tooltip(
+            self.value_spin,
+            "Edit the selected B value. Both experiments restart at t = 0.",
+        )
         self._build_layout()
         self._connect_signals()
         self._set_editor_enabled(False)

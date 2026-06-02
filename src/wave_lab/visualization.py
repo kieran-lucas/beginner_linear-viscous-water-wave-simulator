@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QFont, QFontMetrics, QMouseEvent, QPainter, QP
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from .simulation import DiagnosticSample
+from .design_system import color
 
 
 @dataclass(frozen=True)
@@ -55,15 +56,15 @@ class WaveCanvas(QWidget):
     therefore be reused for playback, comparisons, and exported screenshots.
     """
 
-    BACKGROUND = QColor("#F7F8FA")
-    PLOT_BACKGROUND = QColor("#FFFFFF")
-    TEXT = QColor("#172033")
-    SECONDARY_TEXT = QColor("#5B667A")
-    GRID = QColor("#DCE2EA")
-    EQUILIBRIUM = QColor("#8290A4")
-    CURRENT_WAVE = QColor("#1769AA")
-    SNAPSHOT = QColor("#C77C18")
-    MARKER = QColor("#26734D")
+    BACKGROUND = color("app_background")
+    PLOT_BACKGROUND = color("canvas_background")
+    TEXT = color("text_primary")
+    SECONDARY_TEXT = color("text_secondary")
+    GRID = color("border")
+    EQUILIBRIUM = color("border_strong")
+    CURRENT_WAVE = color("primary")
+    SNAPSHOT = color("comparison")
+    MARKER = color("success")
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)

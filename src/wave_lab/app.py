@@ -6,6 +6,7 @@ import sys
 from time import perf_counter
 
 from PySide6.QtCore import QTimer, Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
 from .compare_panel import ComparePanel
 from .control_panel import ControlPanel, LabSettings
 from .diagnostics_panel import DiagnosticsPanel
+from .design_system import apply_design_system, set_accessible_tooltip
 from .explanation_panel import ExplanationPanel
 from .simulation import WaveSimulation, check_stability
 from .visualization import WaveCanvas
@@ -33,6 +35,9 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
+        application = QApplication.instance()
+        if application is not None:
+            apply_design_system(application)
         self.setWindowTitle("Viscous Wave Lab")
         self.resize(1320, 820)
 
@@ -70,6 +75,7 @@ class MainWindow(QMainWindow):
         self._timer = timer
 
         self._build_layout()
+        self._install_shortcuts()
         self._refresh_canvas()
 
     def _build_layout(self) -> None:
@@ -116,73 +122,24 @@ class MainWindow(QMainWindow):
         layout.addLayout(toolbar)
         self.setCentralWidget(central)
 
-        self.setStyleSheet(
-            """
-            QMainWindow, QWidget { background: #F7F8FA; color: #172033; }
-            QLabel#heading { font-size: 20px; font-weight: 650; }
-            QLabel#subtitle { color: #5B667A; font-size: 13px; }
-            QWidget#controlPanel {
-                background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 5px;
-            }
-            QWidget#explanationPanel {
-                background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 5px;
-            }
-            QWidget#comparePanel {
-                background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 5px;
-            }
-            QWidget#diagnosticsPanel {
-                background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 5px;
-            }
-            QLabel#panelHeading { font-size: 15px; font-weight: 650; }
-            QLabel#sectionHeading, QLabel#fieldLabel { font-weight: 600; }
-            QLabel#helper { color: #5B667A; font-size: 11px; }
-            QLabel#equation {
-                background: #EEF4F8; color: #172033; border-radius: 3px;
-                padding: 9px; font-family: Consolas; font-size: 14px;
-            }
-            QLabel#changedText { color: #1769AA; }
-            QLabel#interpretationText { color: #172033; }
-            QLabel#explanationWarning { padding: 7px; border-radius: 3px; }
-            QLabel#explanationWarning[level="recommended"] {
-                color: #26734D; background: #EAF5EF;
-            }
-            QLabel#explanationWarning[level="caution"] {
-                color: #A76500; background: #FFF6E5;
-            }
-            QLabel#explanationWarning[level="error"] {
-                color: #B42318; background: #FDECEA;
-            }
-            QLabel#compareDiagnostics { color: #5B667A; }
-            QLabel#compareWarning { padding: 4px; border-radius: 3px; }
-            QLabel#compareWarning[level="recommended"] { color: #26734D; }
-            QLabel#compareWarning[level="error"] { color: #B42318; background: #FDECEA; }
-            QLabel#diagnosticsSummary { color: #172033; }
-            QLabel#diagnosticsStability { padding: 4px; border-radius: 3px; }
-            QLabel#diagnosticsStability[level="recommended"] { color: #26734D; }
-            QLabel#diagnosticsStability[level="caution"] {
-                color: #A76500; background: #FFF6E5;
-            }
-            QLabel#diagnosticsStability[level="error"] {
-                color: #B42318; background: #FDECEA;
-            }
-            QLabel#stability { padding: 7px; border-radius: 3px; }
-            QLabel#stability[level="recommended"] { color: #26734D; background: #EAF5EF; }
-            QLabel#stability[level="caution"] { color: #A76500; background: #FFF6E5; }
-            QLabel#stability[level="error"] { color: #B42318; background: #FDECEA; }
-            QGroupBox {
-                border: 1px solid #DCE2EA; border-radius: 4px; margin-top: 7px;
-                padding-top: 7px; font-weight: 600;
-            }
-            QGroupBox::title { subcontrol-origin: margin; left: 7px; padding: 0 3px; }
-            QPushButton {
-                background: #FFFFFF; border: 1px solid #C9D2DF; border-radius: 4px;
-                padding: 7px 14px; color: #172033;
-            }
-            QPushButton:hover { border-color: #1769AA; }
-            QPushButton:pressed { background: #EAF2F8; }
-            QFrame { color: #DCE2EA; }
-            """
+        self.statusBar().showMessage(
+            "Ready. Space: play or pause   Right arrow: step   Ctrl+R: reset",
         )
+        set_accessible_tooltip(self.canvas, "Wave profile. Hover to inspect position and height.")
+
+    def _install_shortcuts(self) -> None:
+        shortcuts = (
+            ("Space", self._toggle_playback),
+            ("Right", self._step),
+            ("Ctrl+R", self._reset),
+            ("Ctrl+D", self._duplicate_compare),
+            ("Ctrl+G", self.diagnostics._toggle_graphs),
+        )
+        self._shortcuts = []
+        for key, callback in shortcuts:
+            shortcut = QShortcut(QKeySequence(key), self)
+            shortcut.activated.connect(callback)
+            self._shortcuts.append(shortcut)
 
     def _toggle_playback(self) -> None:
         if self.simulation.state.paused:
@@ -342,6 +299,7 @@ class MainWindow(QMainWindow):
 
 def main() -> int:
     app = QApplication(sys.argv)
+    apply_design_system(app)
     window = MainWindow()
     window.show()
     return app.exec()
