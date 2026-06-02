@@ -32,6 +32,12 @@ marker, hover readout, energy status, and an optional comparison snapshot.
 Playback uses a capped render timer while the solver performs multiple small
 updates per frame.
 
+The left panel provides beginner-oriented controls for initial height,
+wavelength or pulse width, wave speed, simplified damping rate, and playback
+speed. Presets provide immediate experiments. Advanced numerics reveal grid
+resolution, time step, boundary behavior, RK4 method details, and CFL stability
+feedback. Unsafe settings remain visible for teaching but cannot run.
+
 ## Run the tests
 
 The validation suite uses Python's standard library. PySide6 rendering tests run
