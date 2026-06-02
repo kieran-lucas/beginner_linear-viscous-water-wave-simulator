@@ -83,7 +83,7 @@ class ExplanationPanel(QWidget):
         changed_heading = QLabel("What changed?")
         changed_heading.setObjectName("sectionHeading")
         layout.addWidget(changed_heading)
-        self.changed_label.setText("Preset loaded: Gentle ripple. Start here.")
+        self.changed_label.setText("Preset loaded: Traveling pulse. Start here.")
         layout.addWidget(self.changed_label)
 
         interpretation_heading = QLabel("Current interpretation")
@@ -106,4 +106,3 @@ class ExplanationPanel(QWidget):
         divider = QFrame()
         divider.setFrameShape(QFrame.Shape.HLine)
         return divider
-

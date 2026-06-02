@@ -1,5 +1,6 @@
 import os
 import unittest
+from math import isclose, pi, sin
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -24,9 +25,19 @@ class ControlPanelTests(unittest.TestCase):
     def test_default_preset_has_visible_but_gentle_damping(self) -> None:
         default = PRESETS[0]
 
-        self.assertEqual(default.name, "Gentle ripple")
+        self.assertEqual(default.name, "Traveling pulse")
+        self.assertEqual(default.settings.wave_shape, "gaussian")
         self.assertGreaterEqual(default.settings.damping_rate, 0.1)
         self.assertLessEqual(default.settings.damping_rate, 0.3)
+
+    def test_repeating_wave_presets_meet_their_fixed_end_boundaries(self) -> None:
+        for preset in PRESETS:
+            settings = preset.settings
+            if settings.wave_shape != "sinusoidal":
+                continue
+            with self.subTest(preset=preset.name):
+                phase_at_right_edge = 2.0 * pi * settings.domain_length / settings.wavelength
+                self.assertTrue(isclose(sin(phase_at_right_edge), 0.0, abs_tol=1e-9))
 
     def test_advanced_controls_use_progressive_disclosure(self) -> None:
         panel = ControlPanel()

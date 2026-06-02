@@ -51,7 +51,7 @@ class TrendCanvas(QWidget):
         self.extractor = extractor
         self._history_a: Sequence[DiagnosticSample] = ()
         self._history_b: Sequence[DiagnosticSample] = ()
-        self.setMinimumHeight(126)
+        self.setMinimumHeight(108)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def set_histories(

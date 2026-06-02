@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
+    QFrame,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -80,6 +81,7 @@ class ComparePanel(QWidget):
         self._build_layout()
         self._connect_signals()
         self._set_editor_enabled(False)
+        self.details_frame.setVisible(False)
         self._configure_value_editor()
 
     @property
@@ -96,6 +98,7 @@ class ComparePanel(QWidget):
         self._loading_value = False
         self.enabled_toggle.setChecked(True)
         self._set_editor_enabled(True)
+        self.details_frame.setVisible(True)
         self.description_label.setText(
             "B now matches A. Change one B value below to isolate its effect."
         )
@@ -105,6 +108,7 @@ class ComparePanel(QWidget):
         self._settings = None
         self.enabled_toggle.setChecked(False)
         self._set_editor_enabled(False)
+        self.details_frame.setVisible(False)
         self.description_label.setText(message)
         self.warning_label.clear()
         self.diagnostics_label.setText("A is the blue solid line. B is the amber dashed line.")
@@ -150,15 +154,20 @@ class ComparePanel(QWidget):
         header.addStretch(1)
         layout.addLayout(header)
 
+        self.details_frame = QFrame()
+        details = QVBoxLayout(self.details_frame)
+        details.setContentsMargins(0, 0, 0, 0)
+        details.setSpacing(5)
         controls = QGridLayout()
         controls.setHorizontalSpacing(8)
         controls.addWidget(QLabel("Change in B only:"), 0, 0)
         controls.addWidget(self.parameter_combo, 0, 1)
         controls.addWidget(self.value_spin, 0, 2)
         controls.addWidget(self.description_label, 0, 3)
-        layout.addLayout(controls)
-        layout.addWidget(self.diagnostics_label)
-        layout.addWidget(self.warning_label)
+        details.addLayout(controls)
+        details.addWidget(self.diagnostics_label)
+        details.addWidget(self.warning_label)
+        layout.addWidget(self.details_frame)
 
     def _connect_signals(self) -> None:
         self.enabled_toggle.toggled.connect(self._toggle_changed)
@@ -170,6 +179,7 @@ class ComparePanel(QWidget):
         if not enabled:
             self._settings = None
             self._set_editor_enabled(False)
+            self.details_frame.setVisible(False)
             self.description_label.setText("Compare Mode is off.")
         self.enabled_changed.emit(enabled)
 

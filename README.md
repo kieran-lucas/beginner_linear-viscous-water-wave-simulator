@@ -20,7 +20,7 @@ can all be understood from the repository.
 
 A useful first experiment takes less than a minute:
 
-1. Launch the app and press `Play` with the **Gentle ripple** preset.
+1. Launch the app and press `Play` with the **Traveling pulse** preset.
 2. Watch the blue wave move while the diagnostics graphs track amplitude and
    approximate energy.
 3. Load **Strong damping**, then compare it with **Almost no damping**.
@@ -116,8 +116,9 @@ is documented in [`docs/validation.md`](docs/validation.md).
 **Advanced numerics** reveals grid points, time step, boundary behavior, the
 numerical method, and CFL stability feedback.
 
-The presets are **Gentle ripple**, **Long smooth wave**, **Strong damping**,
-**Almost no damping**, **Fast propagation**, and **Stability risk demo**.
+The presets are **Traveling pulse**, **Gentle ripple**, **Long smooth wave**,
+**Strong damping**, **Almost no damping**, **Fast propagation**, and
+**Stability risk demo**.
 
 ## Export and Reproduce
 
@@ -167,7 +168,7 @@ After installation, the console entry point is also available:
 viscous-wave-lab
 ```
 
-The first screen opens with a visible repeating wave, light but noticeable
+The first screen opens with a visible localized pulse, light but noticeable
 damping, and an inline **Start here** guide. Press **Play**, adjust **Damping
 rate** in the left-side **Medium** section, and use **Reset** to restart. The
 right-side explanation panel updates as controls change.
@@ -203,7 +204,8 @@ desktop-bundling roadmap.
 |   |-- visualization.py           # Main wave-profile canvas
 |   |-- diagnostics_panel.py       # Timeline graphs and numerical feedback
 |   |-- control_panel.py           # Parameters, presets, and advanced controls
-|   `-- education.py               # Structured beginner-facing copy
+|   |-- education.py               # Structured beginner-facing copy
+|   `-- exporting.py               # Image, JSON, text, and CSV exports
 `-- tests/                         # Numerical, runtime, and offscreen UI checks
 ```
 
@@ -240,16 +242,18 @@ The automated checks cover numerical consistency, stability guardrails,
 bounded diagnostic history, Compare Mode independence, and core offscreen UI
 behavior.
 
-## Roadmap
+## Prioritized Roadmap
 
-- Add the overview screenshot and damping-comparison GIF.
-- Add tested desktop bundles for classroom machines that do not have Python.
-- Add parameter-snapshot import for one-click experiment restoration.
-- Add optional side-by-side Compare Mode for users who prefer separate plots.
-- Explore a lightweight two-dimensional surface view while keeping the 1D
-  teaching mode as the default.
-- Add classroom exercise cards for wavelength, damping, boundaries, and
-  numerical stability.
+1. Add the overview screenshot and damping-comparison GIF.
+2. Add tested desktop bundles for classroom machines that do not have Python.
+3. Add parameter-snapshot import for one-click experiment restoration.
+4. Add classroom exercise cards for wavelength, damping, boundaries, and
+   numerical stability.
+5. Evaluate optional side-by-side comparison and a lightweight two-dimensional
+   view only after the core 1D teaching flow remains clear.
+
+The final polish review and rationale for this order are in
+[`docs/final-polish-review.md`](docs/final-polish-review.md).
 
 ## Limitations
 

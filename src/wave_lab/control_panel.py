@@ -36,14 +36,19 @@ class Preset:
 
 PRESETS = (
     Preset(
-        "Gentle ripple",
-        "A small repeating wave with light damping. Start here.",
+        "Traveling pulse",
+        "One disturbance separates into moving waves while damping removes energy. Start here.",
         LabSettings(),
+    ),
+    Preset(
+        "Gentle ripple",
+        "A repeating wave with light damping makes wavelength easy to inspect.",
+        LabSettings(wave_shape="sinusoidal", amplitude=0.6, wavelength=20.0),
     ),
     Preset(
         "Long smooth wave",
         "A broad repeating wave makes wavelength easy to see.",
-        LabSettings(amplitude=0.8, wavelength=32.0, wave_speed=3.0, damping_rate=0.06),
+        LabSettings(amplitude=0.8, wavelength=40.0, wave_speed=3.0, damping_rate=0.06),
     ),
     Preset(
         "Strong damping",

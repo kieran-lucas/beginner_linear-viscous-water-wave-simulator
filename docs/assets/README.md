@@ -12,7 +12,7 @@ Add these captures when the visual presentation is ready:
 ## Capture Checklist
 
 - Use the default light theme at a readable desktop window size.
-- Start from the **Gentle ripple** preset for the overview screenshot.
+- Start from the **Traveling pulse** preset for the overview screenshot.
 - Keep the explanation panel and diagnostics graphs visible.
 - For the GIF, duplicate A into B and change only B's damping rate.
 - Capture a short loop that makes decay visible without creating a large file.

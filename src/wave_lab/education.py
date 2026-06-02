@@ -25,10 +25,10 @@ class ConceptCopy:
 CONCEPTS = {
     "overview": ConceptCopy(
         "Linear damped waves",
-        "The blue line is surface displacement from equilibrium. Peaks and troughs "
-        "travel across the domain while damping gradually removes energy.",
+        "The blue line is surface displacement from equilibrium. The starting pulse "
+        "separates into moving waves while damping gradually removes energy.",
         "The equation balances motion, damping, and spatial curvature.",
-        "Press Play, then compare Strong damping with Almost no damping.",
+        "Press Play to watch the pulse move, then compare Strong damping with Almost no damping.",
     ),
     "wave_shape": ConceptCopy(
         "Starting wave shape",
@@ -97,7 +97,8 @@ CONCEPTS = {
         "Boundary behavior",
         "Boundary behavior determines what happens when a wave reaches an edge. "
         "Fixed ends stay at equilibrium, reflective edges bounce waves back, and "
-        "periodic edges wrap one side of the domain to the other.",
+        "periodic edges wrap one side of the domain to the other. A repeating wave "
+        "that does not meet a fixed end may adjust sharply near that edge.",
         "Boundary conditions complete the equation by defining the domain edges.",
         "Try the same pulse with fixed ends and reflective edges.",
     ),

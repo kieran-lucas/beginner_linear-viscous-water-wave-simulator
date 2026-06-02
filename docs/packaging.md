@@ -35,9 +35,9 @@ linting and tests.
 
 ## First Launch
 
-The app opens with the **Gentle ripple** preset:
+The app opens with the **Traveling pulse** preset:
 
-- a visible repeating wave with `0.16 1/s` effective damping;
+- a visible localized disturbance with `0.16 1/s` effective damping;
 - an inline **Start here** guide above the workspace;
 - a left-side **Damping rate** control in the **Medium** section;
 - **Play**, **Reset**, and **Step** controls;

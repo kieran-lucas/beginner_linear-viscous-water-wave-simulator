@@ -11,10 +11,10 @@ from .simulation import BoundaryCondition, InitialCondition, SimulationParameter
 class LabSettings:
     """Physical, numerical, and playback values selected by the user."""
 
-    wave_shape: str = "sinusoidal"
-    amplitude: float = 0.6
-    wavelength: float = 16.0
-    pulse_width: float = 8.0
+    wave_shape: str = "gaussian"
+    amplitude: float = 0.8
+    wavelength: float = 20.0
+    pulse_width: float = 6.0
     wave_speed: float = 3.0
     damping_rate: float = 0.16
     playback_speed: float = 1.0

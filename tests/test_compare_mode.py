@@ -24,6 +24,17 @@ class ComparePanelTests(unittest.TestCase):
 
         self.assertEqual(panel.settings, settings)
         self.assertTrue(panel.enabled_toggle.isChecked())
+        self.assertFalse(panel.details_frame.isHidden())
+
+    def test_details_stay_collapsed_until_compare_mode_is_enabled(self) -> None:
+        panel = ComparePanel()
+
+        self.assertTrue(panel.details_frame.isHidden())
+
+        panel.set_duplicate(LabSettings())
+        panel.enabled_toggle.setChecked(False)
+
+        self.assertTrue(panel.details_frame.isHidden())
 
     def test_b_editor_changes_only_selected_parameter(self) -> None:
         panel = ComparePanel()

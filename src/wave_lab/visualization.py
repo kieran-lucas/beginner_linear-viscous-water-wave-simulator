@@ -69,7 +69,7 @@ class WaveCanvas(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setMouseTracking(True)
-        self.setMinimumSize(640, 360)
+        self.setMinimumSize(560, 300)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self._positions: tuple[float, ...] = ()
