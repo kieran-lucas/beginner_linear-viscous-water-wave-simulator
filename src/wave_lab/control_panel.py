@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
-    QFormLayout,
     QFrame,
     QGridLayout,
     QGroupBox,
@@ -113,6 +112,8 @@ class ControlPanel(QWidget):
     """Left-side controls with simple defaults and advanced numerical disclosure."""
 
     settings_changed = Signal(object)
+    concept_selected = Signal(str, object)
+    preset_selected = Signal(object)
     play_pause_requested = Signal()
     reset_requested = Signal()
     step_requested = Signal()
@@ -206,6 +207,7 @@ class ControlPanel(QWidget):
         self._loading_values = False
         self._update_shape_controls()
         self._emit_settings()
+        self.preset_selected.emit(preset)
 
     def _build_layout(self) -> None:
         layout = QVBoxLayout(self)
@@ -320,19 +322,25 @@ class ControlPanel(QWidget):
 
     def _connect_signals(self) -> None:
         self.preset_combo.currentIndexChanged.connect(self._preset_selected)
-        self.shape_combo.currentIndexChanged.connect(self._control_changed)
-        for spin in (
-            self.amplitude_spin,
-            self.wavelength_spin,
-            self.pulse_width_spin,
-            self.wave_speed_spin,
-            self.damping_spin,
-            self.grid_points_spin,
-            self.time_step_spin,
+        self.shape_combo.currentIndexChanged.connect(
+            lambda: self._control_changed("wave_shape")
+        )
+        for spin, concept in (
+            (self.amplitude_spin, "amplitude"),
+            (self.wavelength_spin, "wavelength"),
+            (self.pulse_width_spin, "pulse_width"),
+            (self.wave_speed_spin, "wave_speed"),
+            (self.damping_spin, "damping_rate"),
+            (self.grid_points_spin, "grid_points"),
+            (self.time_step_spin, "time_step"),
         ):
-            spin.valueChanged.connect(self._control_changed)
-        self.playback_combo.currentIndexChanged.connect(self._control_changed)
-        self.boundary_combo.currentIndexChanged.connect(self._control_changed)
+            spin.valueChanged.connect(lambda _value, name=concept: self._control_changed(name))
+        self.playback_combo.currentIndexChanged.connect(
+            lambda: self._control_changed("playback_speed")
+        )
+        self.boundary_combo.currentIndexChanged.connect(
+            lambda: self._control_changed("boundary")
+        )
         self.advanced_toggle.toggled.connect(self.advanced_frame.setVisible)
         self.play_button.clicked.connect(self.play_pause_requested)
         self.reset_button.clicked.connect(self.reset_requested)
@@ -343,7 +351,7 @@ class ControlPanel(QWidget):
         if not self._loading_values:
             self.load_preset(self.preset_combo.currentData())
 
-    def _control_changed(self) -> None:
+    def _control_changed(self, concept: str) -> None:
         if self._loading_values:
             return
         self.preset_description.setText(
@@ -351,6 +359,7 @@ class ControlPanel(QWidget):
         )
         self._update_shape_controls()
         self._emit_settings()
+        self.concept_selected.emit(concept, self.settings)
 
     def _emit_settings(self) -> None:
         report = check_stability(self.settings.simulation_parameters())

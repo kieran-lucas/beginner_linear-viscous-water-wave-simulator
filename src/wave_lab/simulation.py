@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from math import exp, isfinite, pi, sin
 
+MAX_DIAGNOSTIC_HISTORY = 4000
+
 
 class BoundaryCondition(str, Enum):
     """Supported behavior at the left and right edges of the domain."""
@@ -332,6 +334,8 @@ class WaveSimulation:
         )
         self.state.diagnostics = sample
         self.state.history.append(sample)
+        if len(self.state.history) > MAX_DIAGNOSTIC_HISTORY:
+            del self.state.history[: len(self.state.history) - MAX_DIAGNOSTIC_HISTORY]
 
     def _apply_fixed_boundary(self, displacement: list[float], velocity: list[float]) -> None:
         if self.parameters.boundary is BoundaryCondition.FIXED:

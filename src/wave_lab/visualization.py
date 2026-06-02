@@ -73,7 +73,8 @@ class WaveCanvas(QWidget):
 
         self._positions: tuple[float, ...] = ()
         self._displacement: tuple[float, ...] = ()
-        self._snapshot: tuple[float, ...] | None = None
+        self._comparison: tuple[float, ...] | None = None
+        self._comparison_diagnostics: DiagnosticSample | None = None
         self._diagnostics: DiagnosticSample | None = None
         self._initial_amplitude = 1.0
         self._vertical_extent = 1.2
@@ -109,14 +110,35 @@ class WaveCanvas(QWidget):
         self.update()
 
     def set_snapshot(self, displacement: Sequence[float] | None) -> None:
-        """Set an optional comparison curve without taking ownership of state."""
+        """Set an optional comparison curve without taking ownership of state.
+
+        Kept as a compatibility alias for early snapshot-based callers.
+        """
+
+        self.set_comparison_data(displacement)
+
+    def set_comparison_data(
+        self,
+        displacement: Sequence[float] | None,
+        diagnostics: DiagnosticSample | None = None,
+        *,
+        initial_amplitude: float | None = None,
+    ) -> None:
+        """Set a synchronized B overlay using the same physical plot scale."""
 
         if displacement is None:
-            self._snapshot = None
+            self._comparison = None
+            self._comparison_diagnostics = None
         else:
             if self._positions and len(displacement) != len(self._positions):
-                raise ValueError("snapshot must match the current wave grid")
-            self._snapshot = tuple(displacement)
+                raise ValueError("snapshot or comparison must match the current wave grid")
+            self._comparison = tuple(displacement)
+            self._comparison_diagnostics = diagnostics
+            if initial_amplitude is not None:
+                self._vertical_extent = max(
+                    self._vertical_extent,
+                    1.2 * max(abs(initial_amplitude), 1e-9),
+                )
         self.update()
 
     def set_learning_markers_visible(self, visible: bool) -> None:
@@ -167,11 +189,11 @@ class WaveCanvas(QWidget):
         painter.fillRect(plot, self.PLOT_BACKGROUND)
         self._draw_title(painter, bounds)
         self._draw_grid(painter, transform)
-        if self._snapshot:
+        if self._comparison:
             self._draw_profile(
                 painter,
                 transform,
-                self._snapshot,
+                self._comparison,
                 self.SNAPSHOT,
                 1.7,
                 Qt.PenStyle.DashLine,
@@ -204,15 +226,15 @@ class WaveCanvas(QWidget):
         font.setPointSize(9)
         font.setBold(False)
         painter.setFont(font)
-        painter.drawText(QPointF(bounds.right() - 190.0, 29.0), "Current wave")
+        painter.drawText(QPointF(bounds.right() - 190.0, 29.0), "A current")
         painter.setPen(QPen(self.CURRENT_WAVE, 2.6))
         painter.drawLine(
             QPointF(bounds.right() - 212.0, 25.0),
             QPointF(bounds.right() - 196.0, 25.0),
         )
-        if self._snapshot:
+        if self._comparison:
             painter.setPen(self.SECONDARY_TEXT)
-            painter.drawText(QPointF(bounds.right() - 92.0, 29.0), "Snapshot")
+            painter.drawText(QPointF(bounds.right() - 92.0, 29.0), "B compare")
             painter.setPen(QPen(self.SNAPSHOT, 1.7, Qt.PenStyle.DashLine))
             painter.drawLine(
                 QPointF(bounds.right() - 114.0, 25.0),
@@ -332,11 +354,16 @@ class WaveCanvas(QWidget):
             return
         diagnostic = self._diagnostics
         painter.setPen(self.SECONDARY_TEXT)
+        comparison = ""
+        if self._comparison_diagnostics is not None:
+            comparison = (
+                f"    B max |u| = {self._comparison_diagnostics.maximum_amplitude:.3f} m"
+            )
         painter.drawText(
             QPointF(bounds.left() + 66.0, bounds.bottom() - 10.0),
             f"t = {diagnostic.time:.2f} s    "
-            f"max |u| = {diagnostic.maximum_amplitude:.3f} m    "
-            f"energy = {diagnostic.normalized_energy:.1%} of initial",
+            f"A max |u| = {diagnostic.maximum_amplitude:.3f} m"
+            f"{comparison}    A energy = {diagnostic.normalized_energy:.1%}",
         )
 
     def _draw_centered_text(self, painter: QPainter, bounds: QRectF, text: str) -> None:
