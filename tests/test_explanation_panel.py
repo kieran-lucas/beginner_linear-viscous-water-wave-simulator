@@ -5,7 +5,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication
 
-from wave_lab.app import MainWindow
+from wave_lab.app import MainWindow, startup_error_message
 from wave_lab.control_panel import PRESETS, LabSettings
 from wave_lab.education import CONCEPTS, format_change, interpretation, stability_message
 from wave_lab.explanation_panel import ExplanationPanel
@@ -55,6 +55,13 @@ class EducationCopyTests(unittest.TestCase):
         self.assertIn("Playback is blocked", message)
         self.assertIn("reduce the time step", message)
 
+    def test_startup_error_message_contains_retry_commands(self) -> None:
+        message = startup_error_message(RuntimeError("Qt plugin missing"))
+
+        self.assertIn("Qt plugin missing", message)
+        self.assertIn('python -m pip install -e "."', message)
+        self.assertIn("python -m wave_lab", message)
+
 
 class ExplanationPanelTests(unittest.TestCase):
     @classmethod
@@ -79,6 +86,16 @@ class ExplanationPanelTests(unittest.TestCase):
         self.assertIn("simplified viscous loss", window.explanation.explanation_label.text())
         window.close()
 
+    def test_window_shows_inline_first_launch_guidance(self) -> None:
+        window = MainWindow()
+        hint = window.onboarding_hint.text()
+
+        self.assertIn("press Play", hint)
+        self.assertIn("Damping rate", hint)
+        self.assertIn("Reset", hint)
+        self.assertIn("right panel", hint)
+        window.close()
+
     def test_window_reports_stability_demo_in_explanation(self) -> None:
         window = MainWindow()
         preset = next(preset for preset in PRESETS if preset.stability_demo)
@@ -92,4 +109,3 @@ class ExplanationPanelTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

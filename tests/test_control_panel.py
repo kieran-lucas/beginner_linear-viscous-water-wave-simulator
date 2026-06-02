@@ -21,6 +21,13 @@ class ControlPanelTests(unittest.TestCase):
                 report = check_stability(preset.settings.simulation_parameters())
                 self.assertEqual(report.is_stable, not preset.stability_demo)
 
+    def test_default_preset_has_visible_but_gentle_damping(self) -> None:
+        default = PRESETS[0]
+
+        self.assertEqual(default.name, "Gentle ripple")
+        self.assertGreaterEqual(default.settings.damping_rate, 0.1)
+        self.assertLessEqual(default.settings.damping_rate, 0.3)
+
     def test_advanced_controls_use_progressive_disclosure(self) -> None:
         panel = ControlPanel()
 

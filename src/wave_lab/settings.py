@@ -16,7 +16,7 @@ class LabSettings:
     wavelength: float = 16.0
     pulse_width: float = 8.0
     wave_speed: float = 3.0
-    damping_rate: float = 0.08
+    damping_rate: float = 0.16
     playback_speed: float = 1.0
     domain_length: float = 100.0
     grid_points: int = 401
@@ -40,4 +40,3 @@ class LabSettings:
             wavelength=self.wavelength,
             width=self.pulse_width,
         )
-

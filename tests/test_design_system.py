@@ -33,15 +33,27 @@ class DesignSystemTests(unittest.TestCase):
     def test_shell_assigns_roles_tooltips_and_shortcuts(self) -> None:
         window = MainWindow()
         shortcut_names = {shortcut.key().toString() for shortcut in window._shortcuts}
+        export_actions = {
+            action.text()
+            for action in window.menuBar().actions()[0].menu().actions()
+        }
 
         self.assertEqual(window.controls.play_button.property("role"), "primary")
         self.assertEqual(window.diagnostics.toggle_button.property("role"), "ghost")
         self.assertTrue(window.controls.damping_spin.toolTip())
         self.assertTrue(window.canvas.toolTip())
         self.assertTrue({"Space", "Right", "Ctrl+R", "Ctrl+D", "Ctrl+G"} <= shortcut_names)
+        self.assertEqual(
+            export_actions,
+            {
+                "Export wave image...",
+                "Save parameter snapshot...",
+                "Copy settings as text",
+                "Export diagnostics CSV...",
+            },
+        )
         window.close()
 
 
 if __name__ == "__main__":
     unittest.main()
-

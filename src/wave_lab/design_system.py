@@ -80,6 +80,10 @@ QMainWindow, QWidget {{
 }}
 QLabel#heading {{ font-size: 20px; font-weight: 650; color: {COLORS.text_primary}; }}
 QLabel#subtitle {{ color: {COLORS.text_secondary}; font-size: 13px; }}
+QLabel#onboardingHint {{
+    color: {COLORS.text_primary}; background: {COLORS.primary_soft};
+    border: 1px solid {COLORS.border}; border-radius: 4px; padding: 7px;
+}}
 QLabel#panelHeading {{ font-size: 15px; font-weight: 650; }}
 QLabel#sectionHeading, QLabel#fieldLabel {{ font-weight: 600; }}
 QLabel#helper {{ color: {COLORS.text_secondary}; font-size: 11px; }}

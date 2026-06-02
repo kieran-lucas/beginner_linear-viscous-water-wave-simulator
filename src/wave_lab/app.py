@@ -6,13 +6,16 @@ import sys
 from time import perf_counter
 
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtGui import QAction, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
+    QFileDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMenu,
+    QMessageBox,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -23,6 +26,14 @@ from .control_panel import ControlPanel, LabSettings
 from .diagnostics_panel import DiagnosticsPanel
 from .design_system import apply_design_system, set_accessible_tooltip
 from .explanation_panel import ExplanationPanel
+from .exporting import (
+    readable_snapshot_text,
+    save_image,
+    snapshot_payload,
+    suggested_filename,
+    write_diagnostics_csv,
+    write_snapshot_json,
+)
 from .runtime import AppConfig, RuntimeController
 from .simulation import WaveSimulation
 from .visualization import WaveCanvas
@@ -79,6 +90,7 @@ class MainWindow(QMainWindow):
         self._timer = timer
 
         self._build_layout()
+        self._build_export_menu()
         self._install_shortcuts()
         self._refresh_canvas()
 
@@ -94,8 +106,15 @@ class MainWindow(QMainWindow):
             "Watch a linear wave propagate and lose energy as damping acts over time."
         )
         subtitle.setObjectName("subtitle")
+        self.onboarding_hint = QLabel(
+            "Start here: press Play, then change Damping rate in the left Medium section. "
+            "Use Reset to restart. The right panel explains each selected control."
+        )
+        self.onboarding_hint.setObjectName("onboardingHint")
+        self.onboarding_hint.setWordWrap(True)
         layout.addWidget(heading)
         layout.addWidget(subtitle)
+        layout.addWidget(self.onboarding_hint)
         content = QHBoxLayout()
         content.setSpacing(14)
         controls_scroll = QScrollArea()
@@ -130,6 +149,26 @@ class MainWindow(QMainWindow):
             "Ready. Space: play or pause   Right arrow: step   Ctrl+R: reset",
         )
         set_accessible_tooltip(self.canvas, "Wave profile. Hover to inspect position and height.")
+
+    def _build_export_menu(self) -> None:
+        self._menu_bar = self.menuBar()
+        self.export_menu = QMenu("&Export", self)
+        self._menu_bar.addMenu(self.export_menu)
+        self.export_image_action = QAction("Export wave image...", self)
+        self.export_snapshot_action = QAction("Save parameter snapshot...", self)
+        self.copy_settings_action = QAction("Copy settings as text", self)
+        self.export_diagnostics_action = QAction("Export diagnostics CSV...", self)
+        self.export_image_action.triggered.connect(self._export_wave_image)
+        self.export_snapshot_action.triggered.connect(self._export_parameter_snapshot)
+        self.copy_settings_action.triggered.connect(self._copy_settings_text)
+        self.export_diagnostics_action.triggered.connect(self._export_diagnostics_csv)
+        for action in (
+            self.export_image_action,
+            self.export_snapshot_action,
+            self.copy_settings_action,
+            self.export_diagnostics_action,
+        ):
+            self.export_menu.addAction(action)
 
     def _install_shortcuts(self) -> None:
         shortcuts = (
@@ -256,6 +295,105 @@ class MainWindow(QMainWindow):
         self.runtime.set_advanced_mode(enabled)
         self.diagnostics.set_advanced_visible(enabled)
 
+    def _export_wave_image(self) -> None:
+        path = self._choose_export_path(
+            "Export wave image",
+            suggested_filename("wave-view", "png"),
+            "PNG image (*.png)",
+        )
+        if not path:
+            return
+        try:
+            save_image(path, self.canvas.render_to_image(1600, 900))
+        except OSError as error:
+            self._show_export_error(error)
+            return
+        self._show_export_success(f"Wave image saved to {path}")
+
+    def _export_parameter_snapshot(self) -> None:
+        path = self._choose_export_path(
+            "Save parameter snapshot",
+            suggested_filename("parameters", "json"),
+            "JSON snapshot (*.json)",
+        )
+        if not path:
+            return
+        try:
+            write_snapshot_json(path, self._snapshot_payload())
+        except OSError as error:
+            self._show_export_error(error)
+            return
+        self._show_export_success(f"Parameter snapshot saved to {path}")
+
+    def _copy_settings_text(self) -> None:
+        QApplication.clipboard().setText(
+            readable_snapshot_text(
+                self.runtime.settings_a,
+                self.simulation.state.diagnostics,
+                settings_b=self.runtime.settings_b,
+                diagnostic_b=(
+                    self.compare_simulation.state.diagnostics
+                    if self.compare_simulation is not None
+                    else None
+                ),
+            )
+        )
+        self._show_export_success("Readable parameter settings copied to the clipboard.")
+
+    def _export_diagnostics_csv(self) -> None:
+        path = self._choose_export_path(
+            "Export diagnostics CSV",
+            suggested_filename("diagnostics", "csv"),
+            "CSV data (*.csv)",
+        )
+        if not path:
+            return
+        try:
+            write_diagnostics_csv(
+                path,
+                self.simulation.state.history,
+                (
+                    self.compare_simulation.state.history
+                    if self.compare_simulation is not None
+                    else None
+                ),
+            )
+        except OSError as error:
+            self._show_export_error(error)
+            return
+        self._show_export_success(f"Diagnostics CSV saved to {path}")
+
+    def _snapshot_payload(self) -> dict[str, object]:
+        return snapshot_payload(
+            self.runtime.settings_a,
+            self.simulation.state.diagnostics,
+            settings_b=self.runtime.settings_b,
+            diagnostic_b=(
+                self.compare_simulation.state.diagnostics
+                if self.compare_simulation is not None
+                else None
+            ),
+        )
+
+    def _choose_export_path(self, title: str, filename: str, file_filter: str) -> str:
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            title,
+            filename,
+            file_filter,
+        )
+        return path
+
+    def _show_export_success(self, message: str) -> None:
+        self.statusBar().showMessage(message, 8000)
+
+    def _show_export_error(self, error: OSError) -> None:
+        QMessageBox.critical(
+            self,
+            "Export failed",
+            f"The export could not be completed.\n\n{error}",
+        )
+
     def _refresh_status(self, warning: str | None = None) -> None:
         if warning:
             self.state_label.setText(f"Playback blocked   {warning}")
@@ -289,11 +427,32 @@ class MainWindow(QMainWindow):
 
 
 def main() -> int:
-    app = QApplication(sys.argv)
-    apply_design_system(app)
-    window = MainWindow()
-    window.show()
-    return app.exec()
+    application = None
+    try:
+        application = QApplication(sys.argv)
+        apply_design_system(application)
+        window = MainWindow()
+        window.show()
+        return application.exec()
+    except Exception as error:  # pragma: no cover - exercised through helper tests
+        message = startup_error_message(error)
+        print(message, file=sys.stderr)
+        if application is not None:
+            QMessageBox.critical(None, "Viscous Wave Lab could not start", message)
+        return 1
+
+
+def startup_error_message(error: Exception) -> str:
+    """Return an actionable message for Python-level launch failures."""
+
+    return (
+        "Viscous Wave Lab could not start.\n\n"
+        f"Details: {error}\n\n"
+        "Try reinstalling dependencies with:\n"
+        '  python -m pip install -e "."\n\n'
+        "Then launch again with:\n"
+        "  python -m wave_lab"
+    )
 
 
 if __name__ == "__main__":

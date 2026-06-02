@@ -13,6 +13,7 @@ Viscous Wave Lab keeps numerical work independent from PySide6 widgets.
 | Advanced Mode, Compare Mode, selected concept, diagnostics expansion | `UIState` |
 | Play, pause, reset, step, A/B lifecycle | `RuntimeController` |
 | Widget wiring and paint requests | `MainWindow` |
+| JSON, text, CSV, and image file writes | `exporting.py` |
 
 `RuntimeController` is UI-framework independent. The desktop shell forwards
 events to it and renders the resulting solver state.
@@ -41,3 +42,5 @@ controller method and restart together after a B edit.
 - The default grid is `401` points; Advanced Mode can lower resolution.
 - Input controls use bounded numeric editors. A future drag-based slider should
   preview its value locally and commit solver rebuilds on a short debounce.
+- Export formatting receives settings and diagnostic snapshots without
+  advancing the solver or owning widget state.
