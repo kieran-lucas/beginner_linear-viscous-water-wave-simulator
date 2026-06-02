@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import (
     QFrame,
@@ -149,6 +149,8 @@ class TrendCanvas(QWidget):
 class DiagnosticsPanel(QWidget):
     """Bottom scientific readout with compact trend plots and collapse support."""
 
+    expanded_changed = Signal(bool)
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("diagnosticsPanel")
@@ -249,3 +251,4 @@ class DiagnosticsPanel(QWidget):
         visible = self.graph_frame.isHidden()
         self.graph_frame.setVisible(visible)
         self.toggle_button.setText("Hide diagnostics" if visible else "Show diagnostics")
+        self.expanded_changed.emit(visible)

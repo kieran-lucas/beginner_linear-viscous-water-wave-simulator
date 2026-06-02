@@ -39,6 +39,23 @@ class WaveSimulationTests(unittest.TestCase):
 
         self.assertLess(simulation.state.diagnostics.normalized_energy, 0.2)
 
+    def test_zero_damping_does_not_remove_energy_from_periodic_sine_mode(self) -> None:
+        simulation = WaveSimulation(
+            SimulationParameters(
+                domain_length=20.0,
+                grid_points=100,
+                wave_speed=2.0,
+                damping_rate=0.0,
+                time_step=0.005,
+                boundary=BoundaryCondition.PERIODIC,
+            ),
+            InitialCondition(kind="sinusoidal", wavelength=10.0),
+        )
+
+        simulation.step(800)
+
+        self.assertAlmostEqual(simulation.state.diagnostics.normalized_energy, 1.0, places=8)
+
     def test_periodic_sine_mode_tracks_analytic_damped_amplitude(self) -> None:
         parameters = SimulationParameters(
             domain_length=20.0,
@@ -116,6 +133,33 @@ class WaveSimulationTests(unittest.TestCase):
         simulation.run(4)
         self.assertAlmostEqual(simulation.state.time, 5 * simulation.parameters.time_step)
 
+    def test_reset_restores_initial_state_and_history(self) -> None:
+        simulation = WaveSimulation()
+        initial_displacement = simulation.state.displacement.copy()
+        initial_velocity = simulation.state.velocity.copy()
+
+        simulation.step(25)
+        simulation.reset()
+
+        self.assertEqual(simulation.state.displacement, initial_displacement)
+        self.assertEqual(simulation.state.velocity, initial_velocity)
+        self.assertEqual(simulation.state.time, 0.0)
+        self.assertEqual(len(simulation.state.history), 1)
+
+    def test_near_limit_cfl_number_reports_caution_without_blocking(self) -> None:
+        report = check_stability(
+            SimulationParameters(
+                domain_length=10.0,
+                grid_points=101,
+                wave_speed=4.0,
+                time_step=0.022,
+            )
+        )
+
+        self.assertTrue(report.is_stable)
+        self.assertGreater(report.cfl_number, 0.8)
+        self.assertIn("close to the recommended limit", report.messages[0])
+
     def test_unstable_cfl_number_is_rejected(self) -> None:
         parameters = SimulationParameters(
             domain_length=10.0,
@@ -133,6 +177,12 @@ class WaveSimulationTests(unittest.TestCase):
     def test_invalid_physical_parameter_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "damping_rate"):
             SimulationParameters(damping_rate=-0.1)
+
+        with self.assertRaisesRegex(ValueError, "wave_speed"):
+            SimulationParameters(wave_speed=0.0)
+
+        with self.assertRaisesRegex(ValueError, "grid_points"):
+            SimulationParameters(grid_points=2)
 
 
 if __name__ == "__main__":

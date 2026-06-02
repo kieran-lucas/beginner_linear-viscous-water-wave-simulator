@@ -19,43 +19,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .simulation import BoundaryCondition, InitialCondition, SimulationParameters, check_stability
 from .design_system import set_accessible_tooltip, set_button_role
-
-
-@dataclass(frozen=True)
-class LabSettings:
-    """Values selected in the control panel, including playback speed."""
-
-    wave_shape: str = "sinusoidal"
-    amplitude: float = 0.6
-    wavelength: float = 16.0
-    pulse_width: float = 8.0
-    wave_speed: float = 3.0
-    damping_rate: float = 0.08
-    playback_speed: float = 1.0
-    domain_length: float = 100.0
-    grid_points: int = 401
-    time_step: float = 0.01
-    boundary: BoundaryCondition = BoundaryCondition.FIXED
-
-    def simulation_parameters(self) -> SimulationParameters:
-        return SimulationParameters(
-            domain_length=self.domain_length,
-            grid_points=self.grid_points,
-            wave_speed=self.wave_speed,
-            damping_rate=self.damping_rate,
-            time_step=self.time_step,
-            boundary=self.boundary,
-        )
-
-    def initial_condition(self) -> InitialCondition:
-        return InitialCondition(
-            kind=self.wave_shape,
-            amplitude=self.amplitude,
-            wavelength=self.wavelength,
-            width=self.pulse_width,
-        )
+from .settings import LabSettings
+from .simulation import BoundaryCondition, check_stability
 
 
 @dataclass(frozen=True)

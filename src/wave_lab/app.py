@@ -23,7 +23,8 @@ from .control_panel import ControlPanel, LabSettings
 from .diagnostics_panel import DiagnosticsPanel
 from .design_system import apply_design_system, set_accessible_tooltip
 from .explanation_panel import ExplanationPanel
-from .simulation import WaveSimulation, check_stability
+from .runtime import AppConfig, RuntimeController
+from .simulation import WaveSimulation
 from .visualization import WaveCanvas
 
 
@@ -42,15 +43,17 @@ class MainWindow(QMainWindow):
         self.resize(1320, 820)
 
         self.controls = ControlPanel()
-        self.simulation = WaveSimulation(
-            self.controls.settings.simulation_parameters(),
-            self.controls.settings.initial_condition(),
+        self.runtime = RuntimeController(
+            self.controls.settings,
+            AppConfig(
+                render_interval_ms=self.RENDER_INTERVAL_MS,
+                base_solver_steps_per_frame=self.BASE_SOLVER_STEPS_PER_FRAME,
+            ),
         )
         self.canvas = WaveCanvas()
         self.explanation = ExplanationPanel()
         self.compare = ComparePanel()
         self.diagnostics = DiagnosticsPanel()
-        self.compare_simulation: WaveSimulation | None = None
         self._render_frames = 0
         self._render_rate_started = perf_counter()
 
@@ -58,18 +61,19 @@ class MainWindow(QMainWindow):
         self.state_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
         self.controls.settings_changed.connect(self._apply_settings)
-        self.controls.concept_selected.connect(self.explanation.show_concept)
+        self.controls.concept_selected.connect(self._show_concept)
         self.controls.preset_selected.connect(self.explanation.show_preset)
         self.controls.play_pause_requested.connect(self._toggle_playback)
         self.controls.step_requested.connect(self._step)
         self.controls.reset_requested.connect(self._reset)
-        self.controls.advanced_toggle.toggled.connect(self.diagnostics.set_advanced_visible)
+        self.controls.advanced_toggle.toggled.connect(self._set_advanced_mode)
         self.compare.enabled_changed.connect(self._toggle_compare)
         self.compare.duplicate_requested.connect(self._duplicate_compare)
         self.compare.settings_changed.connect(self._apply_compare_settings)
+        self.diagnostics.expanded_changed.connect(self.runtime.set_diagnostics_expanded)
 
         timer = QTimer(self)
-        timer.setInterval(self.RENDER_INTERVAL_MS)
+        timer.setInterval(self.runtime.config.render_interval_ms)
         timer.timeout.connect(self._advance_frame)
         timer.start()
         self._timer = timer
@@ -142,67 +146,41 @@ class MainWindow(QMainWindow):
             self._shortcuts.append(shortcut)
 
     def _toggle_playback(self) -> None:
-        if self.simulation.state.paused:
-            self.simulation.resume()
-            if self.compare_simulation is not None:
-                self.compare_simulation.resume()
-        else:
-            self.simulation.pause()
-            if self.compare_simulation is not None:
-                self.compare_simulation.pause()
-        self.controls.set_running(not self.simulation.state.paused)
+        self.controls.set_running(self.runtime.toggle_playback())
         self._refresh_status()
 
     def _advance_frame(self) -> None:
-        multiplier = self.controls.settings.playback_speed
-        steps = max(1, round(self.BASE_SOLVER_STEPS_PER_FRAME * multiplier))
-        self.simulation.run(steps)
-        if self.compare_simulation is not None:
-            self.compare_simulation.run(steps)
-        if not self.simulation.state.paused:
+        if self.runtime.advance_frame():
             self._refresh_canvas()
             self._record_render_frame()
 
     def _step(self) -> None:
-        self.simulation.step()
-        if self.compare_simulation is not None:
-            self.compare_simulation.step()
+        self.runtime.step()
         self._refresh_canvas()
 
     def _reset(self) -> None:
-        self.simulation.reset()
-        self.simulation.pause()
-        if self.compare_simulation is not None:
-            self.compare_simulation.reset()
-            self.compare_simulation.pause()
+        self.runtime.reset()
         self.controls.set_running(False)
         self._refresh_canvas()
 
     def _apply_settings(self, settings: LabSettings) -> None:
-        parameters = settings.simulation_parameters()
-        report = check_stability(parameters)
-        self.explanation.update_stability(report)
-        if (
-            report.is_stable
-            and parameters == self.simulation.parameters
-            and settings.initial_condition() == self.simulation.initial_condition
-        ):
-            self._refresh_status()
-            return
-        self.simulation.pause()
+        update = self.runtime.apply_a_settings(settings)
+        self.explanation.update_stability(update.report)
         self.controls.set_running(False)
-        self.controls.set_playback_available(report.is_stable)
-        self._disable_compare("A changed. Duplicate A into B again to start a new comparison.")
-        if report.is_stable:
-            self.simulation = WaveSimulation(parameters, settings.initial_condition())
+        self.controls.set_playback_available(update.report.is_stable)
+        if update.compare_cleared:
+            self.compare.clear("A changed. Duplicate A into B again to start a new comparison.")
+        if update.simulation_rebuilt:
             self._refresh_canvas()
+        elif update.report.is_stable:
+            self._refresh_status()
         else:
-            self._refresh_status(report.messages[0])
+            self._refresh_status(update.report.messages[0])
 
     def _refresh_canvas(self) -> None:
         initial = self.simulation.initial_condition
         self.canvas.set_wave_data(
-            self.simulation.parameters.positions,
+            self.runtime.render_state.positions_a,
             self.simulation.state.displacement,
             self.simulation.state.diagnostics,
             initial_amplitude=initial.amplitude,
@@ -243,39 +221,40 @@ class MainWindow(QMainWindow):
             self._duplicate_compare()
             return
         if not enabled:
-            self.compare_simulation = None
+            self.runtime.clear_compare()
             self.canvas.set_comparison_data(None)
             self.controls.set_playback_available(self.simulation.stability.is_stable)
+            self._refresh_canvas()
             self._refresh_status()
 
     def _duplicate_compare(self) -> None:
         self.compare.set_duplicate(self.controls.settings)
 
     def _apply_compare_settings(self, settings: LabSettings) -> None:
-        parameters = settings.simulation_parameters()
-        report = check_stability(parameters)
-        self.compare.update_stability(report)
-        self.simulation.pause()
+        update = self.runtime.apply_b_settings(settings)
+        self.compare.update_stability(update.report)
         self.controls.set_running(False)
-        self.controls.set_playback_available(report.is_stable)
-        if not report.is_stable:
-            self.compare_simulation = None
+        self.controls.set_playback_available(update.report.is_stable)
+        if not update.report.is_stable:
             self.canvas.set_comparison_data(None)
-            self._refresh_status(report.messages[0])
+            self._refresh_status(update.report.messages[0])
             return
-
-        self.simulation.reset()
-        self.simulation.pause()
-        self.compare_simulation = WaveSimulation(parameters, settings.initial_condition())
-        self.compare_simulation.pause()
         self._refresh_canvas()
 
     def _disable_compare(self, message: str) -> None:
         if self.compare.settings is None and self.compare_simulation is None:
             return
-        self.compare_simulation = None
+        self.runtime.clear_compare()
         self.canvas.set_comparison_data(None)
         self.compare.clear(message)
+
+    def _show_concept(self, concept: str, settings: LabSettings) -> None:
+        self.runtime.set_selected_concept(concept)
+        self.explanation.show_concept(concept, settings)
+
+    def _set_advanced_mode(self, enabled: bool) -> None:
+        self.runtime.set_advanced_mode(enabled)
+        self.diagnostics.set_advanced_visible(enabled)
 
     def _refresh_status(self, warning: str | None = None) -> None:
         if warning:
@@ -295,6 +274,18 @@ class MainWindow(QMainWindow):
         self.diagnostics.set_render_rate(self._render_frames / elapsed)
         self._render_frames = 0
         self._render_rate_started = perf_counter()
+
+    @property
+    def simulation(self) -> WaveSimulation:
+        """Compatibility alias for the primary solver used by existing views."""
+
+        return self.runtime.simulation_a
+
+    @property
+    def compare_simulation(self) -> WaveSimulation | None:
+        """Compatibility alias for the optional synchronized B solver."""
+
+        return self.runtime.simulation_b
 
 
 def main() -> int:

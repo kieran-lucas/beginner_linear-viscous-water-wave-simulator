@@ -21,6 +21,7 @@ viscous-wave-lab = "wave_lab.app:main"
 
 [project.optional-dependencies]
 dev = [
+  "build>=1.2",
   "pytest>=8.0",
   "ruff>=0.9",
 ]
@@ -33,3 +34,6 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F"]

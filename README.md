@@ -65,15 +65,32 @@ decorative gradients or heavy effects. See
 [`docs/design-system.md`](docs/design-system.md) for tokens, typography,
 spacing, interaction states, and keyboard shortcuts.
 
-## Run the tests
+Runtime coordination is isolated from widgets in
+[`src/wave_lab/runtime.py`](src/wave_lab/runtime.py). The controller owns
+playback policy, cached render positions, explicit UI state, and synchronized
+Compare Mode lifecycle while the numerical solver remains UI-independent. See
+[`docs/runtime-architecture.md`](docs/runtime-architecture.md).
 
-The validation suite uses Python's standard library. PySide6 rendering tests run
-with Qt's offscreen platform:
+## Quality gates
+
+Install development tools:
+
+```powershell
+pip install -e ".[dev]"
+```
+
+Run the same lint, test, and package-build gates used by CI. PySide6 rendering
+tests use Qt's offscreen platform:
 
 ```powershell
 $env:PYTHONPATH = "src"
+$env:QT_QPA_PLATFORM = "offscreen"
+python -m ruff check .
 python -m unittest discover -s tests -v
+python -m build
 ```
 
-For the model assumptions and numerical-method notes, see
-[`docs/model.md`](docs/model.md).
+The automated checks validate numerical consistency and educational behavior,
+not research-grade fluid accuracy. See [`docs/validation.md`](docs/validation.md)
+for the validation scope and [`docs/model.md`](docs/model.md) for model
+assumptions.
