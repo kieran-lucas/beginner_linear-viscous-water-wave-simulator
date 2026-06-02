@@ -205,6 +205,7 @@ class MainWindow(QMainWindow):
     def _apply_settings(self, settings: LabSettings) -> None:
         update = self.runtime.apply_a_settings(settings)
         self.explanation.update_stability(update.report)
+        self.diagnostics.update_stability(update.report)
         self.controls.set_running(False)
         self.controls.set_playback_available(update.report.is_stable)
         if update.compare_cleared:

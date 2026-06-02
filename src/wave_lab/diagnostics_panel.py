@@ -206,6 +206,11 @@ class DiagnosticsPanel(QWidget):
                 f"{current.maximum_amplitude:.3f} m, energy "
                 f"{current.normalized_energy:.0%}.{comparison}"
             )
+        self.update_stability(stability)
+
+    def update_stability(self, stability: StabilityReport) -> None:
+        """Show the latest requested numerical setup, even when playback is blocked."""
+
         level, message = stability_message(stability)
         self.stability_label.setProperty("level", level)
         self.stability_label.setText(message)

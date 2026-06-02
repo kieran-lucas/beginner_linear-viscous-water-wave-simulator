@@ -2,11 +2,19 @@
 
 This directory is reserved for GitHub-facing demo media.
 
-Add these captures when the visual presentation is ready:
+The repository includes these GitHub-facing captures:
 
 | File | Purpose |
 | --- | --- |
-| `app-overview.png` | Desktop screenshot showing the full learning workspace. |
+| `app-overview.png` | Default traveling-pulse workspace with measured decay. |
+| `compare-damping.png` | A/B overlay with different damping rates on one shared scale. |
+| `advanced-numerics.png` | Advanced controls with CFL feedback visible. |
+| `stability-warning.png` | Blocked playback and actionable unstable-CFL guidance. |
+
+One useful follow-up asset remains:
+
+| File | Purpose |
+| --- | --- |
 | `compare-damping.gif` | Short A/B loop with different damping rates on the shared plot scale. |
 
 ## Capture Checklist
@@ -18,8 +26,8 @@ Add these captures when the visual presentation is ready:
 - Capture a short loop that makes decay visible without creating a large file.
 - Avoid including unrelated desktop windows, personal paths, or notifications.
 
-After adding the files, replace the placeholder in the root `README.md` with the
-image and GIF embeds.
+The root `README.md` embeds the PNG gallery. Add the GIF beside the compare
+screenshot after recording a compact loop.
 
 Use **Export > Export wave image...** to create a clean high-resolution plot
 for supporting figures. The main workspace screenshot still needs a desktop

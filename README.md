@@ -14,9 +14,30 @@ can all be understood from the repository.
 
 ## Demo
 
-> **Screenshot and GIF coming soon.** Demo media will live in
-> [`docs/assets/`](docs/assets/README.md). The capture guide describes the
-> planned `app-overview.png` and `compare-damping.gif` assets.
+### Traveling Pulse Overview
+
+The default experiment starts with one localized disturbance. After pressing
+**Play**, it separates into moving waves while the diagnostics measure decay.
+
+![Viscous Wave Lab traveling pulse overview](docs/assets/app-overview.png)
+
+### Learning Cases
+
+**Compare damping rates**
+
+![A and B damping comparison](docs/assets/compare-damping.png)
+
+**Advanced numerical controls**
+
+![Advanced numerical controls](docs/assets/advanced-numerics.png)
+
+**Stability guardrail**
+
+![Playback blocked for an unstable CFL number](docs/assets/stability-warning.png)
+
+The screenshots show the same calm workspace in different teaching states.
+[`docs/assets/`](docs/assets/README.md) documents the capture set and the
+remaining GIF demo.
 
 A useful first experiment takes less than a minute:
 
@@ -244,7 +265,7 @@ behavior.
 
 ## Prioritized Roadmap
 
-1. Add the overview screenshot and damping-comparison GIF.
+1. Add a short damping-comparison GIF.
 2. Add tested desktop bundles for classroom machines that do not have Python.
 3. Add parameter-snapshot import for one-click experiment restoration.
 4. Add classroom exercise cards for wavelength, damping, boundaries, and

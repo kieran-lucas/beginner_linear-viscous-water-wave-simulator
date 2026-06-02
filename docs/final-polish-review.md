@@ -47,7 +47,7 @@ CI quality gates, packaging notes, and an honest scope statement.
 
 ## Prioritized TODO
 
-1. Add a real overview screenshot and short damping-comparison GIF.
+1. Add a short damping-comparison GIF beside the completed screenshot gallery.
 2. Produce and smoke-test a Windows desktop bundle for classroom machines.
 3. Import exported JSON snapshots to restore experiments in one action.
 4. Add optional classroom exercise cards with expected observations.

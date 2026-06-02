@@ -76,6 +76,7 @@ class ControlPanelTests(unittest.TestCase):
         self.assertFalse(window.controls.play_button.isEnabled())
         self.assertFalse(window.controls.step_button.isEnabled())
         self.assertIn("Playback blocked", window.state_label.text())
+        self.assertIn("Playback is blocked", window.diagnostics.stability_label.text())
         window.close()
 
 
