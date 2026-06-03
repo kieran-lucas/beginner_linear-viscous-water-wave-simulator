@@ -6,7 +6,17 @@ from dataclasses import dataclass
 from typing import Sequence
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QMouseEvent, QPainter, QPainterPath, QPen
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QFont,
+    QFontMetrics,
+    QLinearGradient,
+    QMouseEvent,
+    QPainter,
+    QPainterPath,
+    QPen,
+)
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from .simulation import DiagnosticSample
@@ -63,8 +73,10 @@ class WaveCanvas(QWidget):
     GRID = color("border")
     EQUILIBRIUM = color("border_strong")
     CURRENT_WAVE = color("primary")
+    CURRENT_GLOW = color("primary_glow")
     SNAPSHOT = color("comparison")
     MARKER = color("success")
+    WATER = color("canvas_water")
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -187,7 +199,7 @@ class WaveCanvas(QWidget):
             return
 
         plot = transform.rectangle
-        painter.fillRect(plot, self.PLOT_BACKGROUND)
+        self._draw_plot_background(painter, plot)
         self._draw_title(painter, bounds)
         self._draw_grid(painter, transform)
         if self._comparison:
@@ -199,10 +211,12 @@ class WaveCanvas(QWidget):
                 1.7,
                 Qt.PenStyle.DashLine,
             )
-        self._draw_profile(painter, transform, self._displacement, self.CURRENT_WAVE, 2.6)
+        self._draw_profile_glow(painter, transform, self._displacement)
+        self._draw_profile(painter, transform, self._displacement, self.CURRENT_WAVE, 2.8)
         if self._show_learning_markers:
             self._draw_amplitude_marker(painter, transform)
             self._draw_wavelength_marker(painter, transform)
+        self._draw_motion_marker(painter, transform)
         self._draw_hover_readout(painter, transform)
         self._draw_status(painter, bounds)
 
@@ -215,10 +229,27 @@ class WaveCanvas(QWidget):
             return None
         return PlotTransform(plot, self._positions[0], self._positions[-1], self._vertical_extent)
 
+    def _draw_plot_background(self, painter: QPainter, plot: QRectF) -> None:
+        painter.save()
+        painter.setPen(QPen(self.GRID, 1.0))
+        painter.setBrush(QBrush(self.PLOT_BACKGROUND))
+        painter.drawRoundedRect(plot, 8.0, 8.0)
+
+        water = QColor(self.WATER)
+        water.setAlpha(150)
+        painter.setPen(Qt.PenStyle.NoPen)
+        for index in range(5):
+            band_top = plot.top() + index * plot.height() / 5.0
+            band = QRectF(plot.left(), band_top, plot.width(), plot.height() / 10.0)
+            tint = QColor(water)
+            tint.setAlpha(max(34, 88 - index * 8))
+            painter.fillRect(band, tint)
+        painter.restore()
+
     def _draw_title(self, painter: QPainter, bounds: QRectF) -> None:
         painter.setPen(self.TEXT)
         font = painter.font()
-        font.setPointSize(11)
+        font.setPointSize(12)
         font.setBold(True)
         painter.setFont(font)
         painter.drawText(QPointF(66.0, 29.0), "Surface displacement over space")
@@ -251,7 +282,9 @@ class WaveCanvas(QWidget):
                 + index * (transform.x_maximum - transform.x_minimum) / 5.0
             )
             point = transform.to_canvas(x_value, 0.0)
-            painter.setPen(QPen(self.GRID, 1.0))
+            grid = QColor(self.GRID)
+            grid.setAlpha(175)
+            painter.setPen(QPen(grid, 1.0))
             painter.drawLine(QPointF(point.x(), plot.top()), QPointF(point.x(), plot.bottom()))
             painter.setPen(self.SECONDARY_TEXT)
             painter.drawText(QPointF(point.x() - 13.0, plot.bottom() + 19.0), f"{x_value:.0f}")
@@ -259,7 +292,9 @@ class WaveCanvas(QWidget):
         for index in range(-2, 3):
             y_value = index * transform.y_extent / 2.0
             point = transform.to_canvas(transform.x_minimum, y_value)
-            pen = QPen(self.EQUILIBRIUM if index == 0 else self.GRID, 1.4 if index == 0 else 1.0)
+            grid = QColor(self.GRID)
+            grid.setAlpha(175)
+            pen = QPen(self.EQUILIBRIUM if index == 0 else grid, 1.5 if index == 0 else 1.0)
             painter.setPen(pen)
             painter.drawLine(QPointF(plot.left(), point.y()), QPointF(plot.right(), point.y()))
             painter.setPen(self.SECONDARY_TEXT)
@@ -295,6 +330,41 @@ class WaveCanvas(QWidget):
         )
         painter.drawPath(path)
 
+    def _draw_profile_glow(
+        self,
+        painter: QPainter,
+        transform: PlotTransform,
+        displacement: Sequence[float],
+    ) -> None:
+        glow = QColor(self.CURRENT_GLOW)
+        for width, alpha in ((9.0, 42), (5.6, 68)):
+            glow.setAlpha(alpha)
+            self._draw_profile(painter, transform, displacement, glow, width)
+
+        fill_path = QPainterPath()
+        start = transform.to_canvas(self._positions[0], 0.0)
+        fill_path.moveTo(start)
+        for x_value, y_value in zip(self._positions, displacement):
+            fill_path.lineTo(transform.to_canvas(x_value, y_value))
+        fill_path.lineTo(transform.to_canvas(self._positions[-1], 0.0))
+        fill_path.closeSubpath()
+
+        gradient = QLinearGradient(
+            QPointF(0.0, transform.rectangle.top()),
+            QPointF(0.0, transform.rectangle.bottom()),
+        )
+        upper = QColor(self.CURRENT_GLOW)
+        upper.setAlpha(72)
+        lower = QColor(self.CURRENT_GLOW)
+        lower.setAlpha(10)
+        gradient.setColorAt(0.0, upper)
+        gradient.setColorAt(1.0, lower)
+        painter.save()
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(gradient))
+        painter.drawPath(fill_path)
+        painter.restore()
+
     def _draw_amplitude_marker(self, painter: QPainter, transform: PlotTransform) -> None:
         if not self._displacement:
             return
@@ -328,6 +398,23 @@ class WaveCanvas(QWidget):
         label_position = QPointF((start.x() + end.x()) / 2.0 - 36.0, start.y() - 7.0)
         painter.drawText(label_position, f"wavelength {self._wavelength:.1f} m")
 
+    def _draw_motion_marker(self, painter: QPainter, transform: PlotTransform) -> None:
+        if self._diagnostics is None or not self._positions:
+            return
+        phase = (self._diagnostics.time * 0.22) % 1.0
+        x_value = transform.x_minimum + phase * (transform.x_maximum - transform.x_minimum)
+        index = min(range(len(self._positions)), key=lambda item: abs(self._positions[item] - x_value))
+        point = transform.to_canvas(self._positions[index], self._displacement[index])
+        halo = QColor(self.CURRENT_GLOW)
+        halo.setAlpha(95)
+        painter.save()
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(halo)
+        painter.drawEllipse(point, 6.5, 6.5)
+        painter.setBrush(self.CURRENT_WAVE)
+        painter.drawEllipse(point, 2.6, 2.6)
+        painter.restore()
+
     def _draw_hover_readout(self, painter: QPainter, transform: PlotTransform) -> None:
         if self._hover_index is None or self._hover_index >= len(self._displacement):
             return
@@ -344,9 +431,9 @@ class WaveCanvas(QWidget):
         box_x = min(point.x() + 12.0, transform.rectangle.right() - text_width - 18.0)
         box_y = max(point.y() - 34.0, transform.rectangle.top() + 7.0)
         box = QRectF(box_x, box_y, text_width + 12.0, 24.0)
-        painter.fillRect(box, self.PLOT_BACKGROUND)
+        painter.setBrush(QBrush(self.PLOT_BACKGROUND))
         painter.setPen(QPen(self.GRID, 1.0))
-        painter.drawRect(box)
+        painter.drawRoundedRect(box, 6.0, 6.0)
         painter.setPen(self.TEXT)
         painter.drawText(QPointF(box.left() + 6.0, box.top() + 16.0), label)
 

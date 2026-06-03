@@ -36,6 +36,7 @@ class TrendCanvas(QWidget):
     TEXT = color("text_secondary")
     GRID = color("border")
     A_COLOR = color("primary")
+    A_GLOW = color("primary_glow")
     B_COLOR = color("comparison")
 
     def __init__(
@@ -66,8 +67,10 @@ class TrendCanvas(QWidget):
     def paintEvent(self, event) -> None:  # noqa: N802 - Qt callback name
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.fillRect(self.rect(), self.BACKGROUND)
         bounds = QRectF(self.rect())
+        painter.setPen(QPen(self.GRID, 1.0))
+        painter.setBrush(self.BACKGROUND)
+        painter.drawRoundedRect(bounds.adjusted(0.5, 0.5, -0.5, -0.5), 7.0, 7.0)
         plot = bounds.adjusted(42.0, 25.0, -12.0, -24.0)
         self._draw_grid(painter, plot)
         self._draw_series(
@@ -83,7 +86,9 @@ class TrendCanvas(QWidget):
         self._draw_labels(painter, bounds, plot)
 
     def _draw_grid(self, painter: QPainter, plot: QRectF) -> None:
-        painter.setPen(QPen(self.GRID, 1.0))
+        grid = QColor(self.GRID)
+        grid.setAlpha(160)
+        painter.setPen(QPen(grid, 1.0))
         for index in range(3):
             y_value = plot.top() + index * plot.height() / 2.0
             painter.drawLine(QPointF(plot.left(), y_value), QPointF(plot.right(), y_value))
@@ -114,7 +119,14 @@ class TrendCanvas(QWidget):
                 path.moveTo(point)
             else:
                 path.lineTo(point)
-        painter.setPen(QPen(series.color, 1.8, series.style))
+        if series.style == Qt.PenStyle.SolidLine:
+            glow = QColor(self.A_GLOW)
+            glow.setAlpha(54)
+            painter.setPen(QPen(glow, 5.0, series.style, Qt.PenCapStyle.RoundCap))
+            painter.drawPath(path)
+        painter.setPen(
+            QPen(series.color, 2.0, series.style, Qt.PenCapStyle.RoundCap)
+        )
         painter.drawPath(path)
 
     def _draw_labels(self, painter: QPainter, bounds: QRectF, plot: QRectF) -> None:

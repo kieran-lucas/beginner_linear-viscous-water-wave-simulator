@@ -15,8 +15,8 @@ class DesignSystemTests(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
 
     def test_semantic_tokens_define_scientific_theme(self) -> None:
-        self.assertEqual(COLORS.primary, "#1769AA")
-        self.assertEqual(COLORS.comparison, "#C77C18")
+        self.assertEqual(COLORS.primary, "#0E7C9F")
+        self.assertEqual(COLORS.comparison, "#D97706")
         self.assertEqual(SPACING.medium, 12)
 
     def test_stylesheet_has_focus_tooltip_and_button_roles(self) -> None:
